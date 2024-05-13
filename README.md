@@ -1,3 +1,3 @@
 # Portfolio README
 
-Fill out with description later
+This is the final project for STAT753.
