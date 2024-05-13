@@ -1,0 +1,73 @@
+---
+title: "ARIMA bootstrap forecasting"
+author: "Ben Maritato"
+date: "2024-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+fed = read.csv("C:/Users/bmari/OneDrive/Graduate School/STAT 753 - Stochastic Models and Simulations/Final Project/DGS30 Monthly.csv")
+head(fed)
+mortgage = read.csv("C:/Users/bmari/OneDrive/Graduate School/STAT 753 - Stochastic Models and Simulations/Final Project/MORTGAGE30US Monthly.csv")
+head(mortgage)
+data = merge(fed,mortgage)
+data$DATE = as.Date(data$DATE)
+rownames(data) = data$DATE
+data$SPREAD = data$MORTGAGE30US - data$DGS30
+
+data = data[which(rownames(data) == '1987-01-01'):nrow(data),]
+data.ts = ts(data['SPREAD'], start = c(1987, 1), frequency = 12)
+```
+
+```{r}
+library(stats)
+library(tseries)
+library(forecast)
+library(ggplot2)
+library(MASS)
+library(dplyr)
+```
+
+```{r}
+model_100 = Arima(data.ts, order = c(1,0,0), method = 'CSS-ML')
+model_110 = Arima(data.ts, order = c(1,1,0), method = 'CSS-ML')
+model_auto = Arima(data.ts, order = c(1,0,2), method = 'CSS-ML')
+
+model_100_bootstrap = forecast(model_100, h=12*15, bootstrap = T, level = 95)
+model_110_bootstrap = forecast(model_110, h=12*15, bootstrap = T, level = 95)
+model_auto_bootstrap = forecast(model_auto, h=12*15, bootstrap = T, level = 95)
+
+model_100_forecast = forecast(model_100, h=12*15, level = 95)
+model_110_forecast = forecast(model_110, h=12*15, level = 95)
+model_auto_forecast = forecast(model_auto, h=12*15, level = 95)
+```
+
+
+```{r}
+autoplot(data.ts)+
+autolayer(model_100_forecast, series = 'AR(1)', alpha = .6) +
+autolayer(model_100_bootstrap, series = 'ARIMA(1,0,2', alpha = .6)+
+theme(panel.background = element_rect(fill = 'white', colour = 'grey'), legend.position = c(0.2,0.8))+
+ylab("SPREAD")
+guides(colour = guide_legend("Model"))
+
+autoplot(data.ts)+
+autolayer(model_auto_forecast, series = 'AR(1)', alpha = .6) +
+autolayer(model_auto_bootstrap, series = 'ARIMA(1,0,2', alpha = .6)+
+theme(panel.background = element_rect(fill = 'white', colour = 'grey'), legend.position = c(0.2,0.8))+
+ylab("SPREAD")
+guides(colour = guide_legend("Model"))
+```
+
+
+
